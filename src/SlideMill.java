@@ -98,9 +98,9 @@ public class SlideMill extends Container implements Runnable {
 
   public void paint(Graphics g) {
     if (mImage != null && mCaption == null)
-      Log.log("SlideMill.paint(): image without caption");
+      Log.log("SlideMill.paint(): no caption: " + mFilename);
     if (mImage != null && mTimestamp == null)
-      Log.log("SlideMill.paint(): image without timestamp");
+      Log.log("SlideMill.paint(): no timestamp: " + mFilename);
 
     Graphics2D g2 = (Graphics2D)g;
     g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -208,12 +208,15 @@ public class SlideMill extends Container implements Runnable {
       // Load up the next one.
       loadNext();
 
+      // Sleep for the rest of the time, if any time is left.
       long now = System.currentTimeMillis();
       long remainder = mDelay - (now - beginTime);
-      //Log.log("SlideMill.run(): remainder = " + remainder);
-
-      if (remainder < 0) remainder = 0;
-      try { Thread.sleep(remainder); } catch (InterruptedException ie) {}
+      if (remainder > 0) {
+        try { Thread.sleep(remainder); } catch (InterruptedException ie) {}
+      }
+      else {
+        Log.log("SlideMill.run(): remainder = " + remainder + " for image " + mPrefetchedFilename);
+      }
     }
   }
   
@@ -346,11 +349,11 @@ public class SlideMill extends Container implements Runnable {
     BufferedImage img = null;
     try { img = ImageIO.read(new File(path)); }
     catch (Throwable t) {
-      Log.log("SlideMill.loadImage(): " + t);
+      Log.log("SlideMill.loadImage(): " + t + ": " + path);
       System.gc();
       try { img = ImageIO.read(new File(path)); }
       catch (Throwable t2) {
-        Log.log("SlideMill.loadImage(): second attempt: " + t2);
+        Log.log("SlideMill.loadImage(): second attempt: " + t2 + ": " + path);
       }
     }
     return img;
