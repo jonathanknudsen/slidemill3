@@ -245,6 +245,7 @@ public class SlideMill extends Container implements Runnable {
 
     // If 1new and 2pool are both empty, swap 2pool and 3done.
     if (target == null) {
+      Log.log("SlideMill.getNextFilename(): swapping 2pool and 3done");
       File tmpDirectory = new File(mBase + File.separator + kTmp);
       File originalPool = new File(mBase + File.separator + kPool);
       File originalDone = new File(mBase + File.separator + kDone);
