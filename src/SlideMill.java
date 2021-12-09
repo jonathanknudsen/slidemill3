@@ -252,6 +252,10 @@ public class SlideMill extends Container implements Runnable {
       poolDirectory.renameTo(tmpDirectory);
       doneDirectory.renameTo(originalPool);
       tmpDirectory.renameTo(originalDone);
+      try { Runtime.getRuntime().exec("sync"); }
+      catch (IOException ioe) {
+        Log.log("SlideMill.getNextFilename(): sync reshuffle failed");
+      }
       return getNextFilename();
     }
     
@@ -260,6 +264,10 @@ public class SlideMill extends Container implements Runnable {
     boolean success = target.renameTo(destination);
     if (success == false) {
       Log.log("SlideMill.getNextFilename(): renameTo() failed");
+    }
+    try { Runtime.getRuntime().exec("sync"); }
+    catch (IOException ioe) {
+      Log.log("SlideMill.getNextFilename(): sync rename failed");
     }
     
     // Return the 3done location of the file.
