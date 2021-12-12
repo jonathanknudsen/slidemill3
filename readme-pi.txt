@@ -1,7 +1,7 @@
 Raspbian
 command line dd to sd card
 
-wpa_passphrase aelous-xii 'zazzles!' >> /etc/wpa_supplicant/wpa_supplicant.conf
+wpa_passphrase aeolus-xii '********' >> /etc/wpa_supplicant/wpa_supplicant.conf
 edit /etc/network/interfaces, change manual to static, add address, netmask, gateway
 
 sudo apt-get update
@@ -14,4 +14,4 @@ sudo raspi-config # select gui with auto-login
 #sudo apt-get install lxrandr
 uncomment overscan disable in /boot/config.txt
 
-sudo apt-get install -y oracle-java8-jdk # openjdk-8-jre ?
+sudo apt-get install -y openjdk-11-jdk

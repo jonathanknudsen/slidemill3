@@ -1,28 +1,27 @@
 # Three Directories Keep State
 
-- _1new_ holds images that have been recently uploaded and should be shown first
-- _2pool_ holds images yet to be displayed
-- _3done_ holds images that have been displayed
+- _1new_ holds links to images that have been recently uploaded and should be shown first
+- _2pool_ holds links to images yet to be displayed
+- _3done_ holds links to images that have been displayed
+
+The images themselves are kept in a single directory for easy rsync-ing
+from Kristen's laptop.
+
+`PhotoDB` maintains this system of links, and its `clean()` method ensures
+that the three directories contain only valid links, and that every image
+in the image directory has a corresponding link.
 
 # Display Algorithm
 
 while (true)
-  if _1new_ has anything in it, src = _1new_
-  else if _2pool_ has anything in it, src = _2pool_
-  else
-    move everything in _3done_ to _2pool_
-    src = _2pool_
+  get next photo path from PhotoDB
 
-  select a file at random
-  move the file to _3done_
-  return the _3done_ path to be loaded and displayed
+  load photo
   
-  wait for the delay time
+  wait for however much of the delay time was not taken with image loading
 
 # Syncing from Kristen's MacBook
 
-Do the Phoshare thing
-Compare local directory list with consolidated _1new_, _2pool_, and _3done_ listings
-Copy anything local that's not on the remote to _1new_
-Remove anything that's present remotely but not locally
+Run osxphotos to export
+Run rsync
 
