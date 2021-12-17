@@ -1,6 +1,6 @@
-FULLSCREEN=yes
-PICTURES=~/Pictures/tv-album
-INTERVAL=10000
+FULLSCREEN=no
+PICTURES=tv-test-album
+INTERVAL=1000
 DB=photodb
 LOG=run.log
 

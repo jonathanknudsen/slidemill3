@@ -19,8 +19,12 @@ public class SlideMill extends Container implements Runnable {
   
   public static void main(String... args) throws IOException {
     String fullscreenS = args[0];
-    String directory = args[1];
+    String pics = args[1];
     String delayS = args[2];
+    String dbS = args[3];
+    String logS = args[4];
+
+    Log.setPath(Path.of(logS));
 
     boolean fullscreen = !fullscreenS.equals("no");
     
@@ -31,7 +35,7 @@ public class SlideMill extends Container implements Runnable {
       Log.log("SlideMill.main(): could not parse delay " + delayS);      
     }
     
-    SlideMill sm = new SlideMill(directory, delay);
+    SlideMill sm = new SlideMill(pics, delay, dbS);
     //sm.getNextFilename();
     setupGraphics(sm, fullscreen);
     
@@ -75,9 +79,9 @@ public class SlideMill extends Container implements Runnable {
   private Photo mPhoto, mNextPhoto;
   private int mDelay;
 
-  public SlideMill(String base, int delay) throws IOException {
+  public SlideMill(String base, int delay, String dbS) throws IOException {
     Path srcPath = Path.of(base);
-    Path dbPath = Path.of("photodb");
+    Path dbPath = Path.of(dbS);
 
     mPhotoDB = new PhotoDB(srcPath, dbPath);
 
@@ -113,6 +117,7 @@ public class SlideMill extends Container implements Runnable {
       int ix = (sw - iw) / 2;
       int iy = (sh - ih) / 2;
       //Log.log("SlideMill.paint(): about to drawImage()");
+      //Log.log("SlideMill.paint(): [show] " + mPhoto.getPath());
       g2.drawImage(mPhoto.getBufferedImage(), ix, iy, iw, ih, Color.black, null);
     }
 
@@ -144,6 +149,30 @@ public class SlideMill extends Container implements Runnable {
 
     if (mPhoto == null) return;
 
+    // Diagnostics
+    /*
+    int diagX = tx;
+    int diagY = ty - (int)fh;
+    g2.setPaint(Color.black);
+    drawStringShadow(g2, mPhotoDB.getDiagnosticString(), diagX, diagY, xpadding, ypadding, radius);
+    g2.setPaint(Color.white);
+    g2.drawString(mPhotoDB.getDiagnosticString(), diagX, diagY);
+    int countPanics = Log.countPanics();
+    String panicString = "No panics";
+    if (countPanics > 0)
+      panicString = NumberFormat.getInstance().format(countPanics) + " panics";
+    int panicX = diagX;
+    int panicY = diagY - (int)fh;
+    g2.setPaint(Color.black);
+    drawStringShadow(g2, panicString, panicX, panicY, xpadding, ypadding, radius);
+    g2.setPaint(Color.white);
+    if (countPanics > 0)
+      g2.setPaint(Color.red);
+    g2.drawString(panicString, panicX, panicY);
+    */
+
+    // Timestamp and caption
+    g2.setPaint(Color.black);
     if (mPhoto.getTimestamp() != null)
       drawStringShadow(g2, mPhoto.getTimestamp(), tx, ty, xpadding, ypadding, radius);
     if (mPhoto.getCaption() != null)

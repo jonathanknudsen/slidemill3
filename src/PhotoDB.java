@@ -1,8 +1,7 @@
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
+import java.text.*;
+import java.util.*;
 import java.util.stream.Stream;
 
 /** Manages an on-disk database of photos.
@@ -27,6 +26,10 @@ public class PhotoDB {
         Path p = db.getNext();
         Log.log("PhotoDB.main(): p = " + p);
     }
+
+    /* Diagnostics */
+    private String mDiagnosticString;
+    public String getDiagnosticString() { return mDiagnosticString; }
 
     // Directories for images.
     private static String kNew =  "1new";
@@ -65,6 +68,9 @@ public class PhotoDB {
         Path linkToMove = null;
         int numberAvailablePaths = 0;
         
+        // First, make sure the db makes sense.
+        clean();
+
         // Get the first one in kNew if available.
         contents = list(mDBPath.resolve(kNew));
         numberAvailablePaths += contents.size();
@@ -73,9 +79,9 @@ public class PhotoDB {
         }
 
         // Get a random one out of kPool otherwise.
+        contents = list(mDBPath.resolve(kPool));
+        numberAvailablePaths += contents.size();
         if (linkToMove == null) {
-            contents = list(mDBPath.resolve(kPool));
-            numberAvailablePaths += contents.size();
             int i = mRandom.nextInt(contents.size());
             linkToMove = contents.get(i);
         }
@@ -88,13 +94,18 @@ public class PhotoDB {
 
         // Swap kDone to kPool if necessary.
         if (numberAvailablePaths <= 1) {
-            Log.log("PhotoDB.getNext(): reshuffling kDone to kPool");
+            Log.log("PhotoDB.getNext(): [reshuffle]");
             Files.move(mDBPath.resolve(kDone), mDBPath.resolve(kTmp));
             Files.move(mDBPath.resolve(kPool), mDBPath.resolve(kDone));
             Files.move(mDBPath.resolve(kTmp), mDBPath.resolve(kPool));
         }
 
-        clean();
+        try { Runtime.getRuntime().exec("sync"); }
+        catch (Throwable t) {
+            Log.log("[panic] Could not run sync");
+        }
+
+        Log.log("PhotoDB.getNext(): [show] " + realPath);
 
         return realPath;
     }
@@ -106,13 +117,32 @@ public class PhotoDB {
         List<Path> validPaths = new ArrayList<Path>();
 
         // Aggregate a list of valid file names from the db directories.
-        validPaths.addAll(cleanLinkDirectory(mDBPath.resolve(kNew)));
-        validPaths.addAll(cleanLinkDirectory(mDBPath.resolve(kPool)));
-        validPaths.addAll(cleanLinkDirectory(mDBPath.resolve(kDone)));
+        List<Path> newPaths  = cleanLinkDirectory(mDBPath.resolve(kNew));
+        List<Path> poolPaths = cleanLinkDirectory(mDBPath.resolve(kPool));
+        List<Path> donePaths = cleanLinkDirectory(mDBPath.resolve(kDone));
+        validPaths.addAll(newPaths);
+        validPaths.addAll(poolPaths);
+        validPaths.addAll(donePaths);
 
         // Look through the source directory. For any photo without a
         // corresponding link, create a new link in 1new.
-        findNewPhotos(validPaths);
+        List<Path> allPaths = findNewPhotos(validPaths);
+
+        // Build diagnostic string.
+        NumberFormat nf = NumberFormat.getInstance();
+        int countNew  = list(mDBPath.resolve(kNew)).size();
+        int countPool = list(mDBPath.resolve(kPool)).size();
+        int countDone = list(mDBPath.resolve(kDone)).size();
+        int countAll = list(mSourcePath).size();
+
+        if (countNew + countPool + countDone != countAll)
+            Log.log("PhotoDB.clean(): [not-quite-panic] db counts do not equal picture count");
+        
+        mDiagnosticString = nf.format(countNew) + " + " +
+                            nf.format(countPool) + " + " +
+                            nf.format(countDone) + " = " +
+                            nf.format(countAll);
+        //Log.log("[diag] " + mDiagnosticString);
     }
 
     private List<Path> cleanLinkDirectory(Path p) throws IOException {
@@ -129,7 +159,7 @@ public class PhotoDB {
                 Files.delete(e);
             }
             else {
-                //Log.log("PhotoDB.cleanLinkDirectory(" + p + "): adding " + e.getFileName());
+                //Log.log("PhotoDB.cleanLinkDirectory(" + p + "): adding " + e.genfileName());
                 validPaths.add(e.getFileName());
             }
         }
@@ -137,12 +167,13 @@ public class PhotoDB {
         return validPaths;
     }
 
-    private void findNewPhotos(List<Path> v) throws IOException {
+    private List<Path> findNewPhotos(List<Path> v) throws IOException {
         List<Path> contents = list(mSourcePath);
 
         for (Path e: contents) {
             // If we don't already know about it, put it in kNew.
-            if (v.contains(e.getFileName()) == false) {
+            // Also, skip files that begin with a dot, although we shouldn't have to do that here.
+            if (v.contains(e.getFileName()) == false && e.getFileName().toString().indexOf(".") != 0) {
                 String name = e.getFileName().toString();
                 Path linkPath = mDBPath.resolve(kNew).resolve(name);
                 Path realPath = mSourcePath.resolve(name).toAbsolutePath();
@@ -150,6 +181,7 @@ public class PhotoDB {
                 Files.createSymbolicLink(linkPath, realPath);
             }
         }
+        return contents;
     }
 
     private List<Path> list(Path directory) throws IOException {

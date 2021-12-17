@@ -11,7 +11,7 @@ import javax.imageio.*;
 
 public class Photo {
     public static void main(String... args) throws IOException {
-        Photo p = Photo.load(Path.of("tv-test-album/IMG_0296.jpg"));
+        Photo p = Photo.load(Path.of(args[0]));
         Log.log("Photo.main(): timestamp = " + p.getTimestamp());
         Log.log("Photo.main(): caption = " + p.getCaption());
     }
@@ -21,6 +21,8 @@ public class Photo {
         return new Photo(path);
     }
 
+    // Photo is an image plus a timestamp string and caption string.
+    //We also remember the original Path.
     private Path mPath;
     private BufferedImage mBufferedImage;
     private String mTimestamp;
